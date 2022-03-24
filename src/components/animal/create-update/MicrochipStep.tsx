@@ -1,12 +1,7 @@
 import React, { memo } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
-import { Grid } from '@material-ui/core';
-import Button from '@material-ui/core/Button';
-import Divider from '@material-ui/core/Divider';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import Radio from '@material-ui/core/Radio';
-import RadioGroup from '@material-ui/core/RadioGroup';
+import { Button, Divider, FormControlLabel, Grid, Radio, RadioGroup } from '@mui/material';
 import TextInput from '../../form/TextInput';
 
 export enum MicrochipStatus {
@@ -51,7 +46,7 @@ function MicrochipStep({ onPrev, onNext }: MicrochipStepProps) {
                         control={control}
                         name="chip.status"
                         render={props => (
-                            <RadioGroup value={props.value} onChange={(e, val) => props.onChange(val)}>
+                            <RadioGroup value={props.field.value} onChange={(e, val) => props.field.onChange(val)}>
                                 <FormControlLabel
                                     value={MicrochipStatus.Implanted}
                                     control={<Radio size="small" />}
@@ -70,7 +65,7 @@ function MicrochipStep({ onPrev, onNext }: MicrochipStepProps) {
             <Grid item container>
                 <Divider style={{ width: '100%' }} />
             </Grid>
-            <Grid item xs={12} container spacing={2} justify="center">
+            <Grid item xs={12} container spacing={2} justifyContent="center">
                 <Grid item>
                     <Button color="secondary" variant="outlined" onClick={onPrev}>
                         Back

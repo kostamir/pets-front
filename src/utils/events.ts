@@ -10,3 +10,14 @@ export const sortEventsByDate = (event1: Event, event2: Event, descending = true
 
     return descending ? date2 - date1 : date1 - date2;
 };
+
+export const getEventDetails = (event: Event) => [
+    {
+        title: 'Comments',
+        value: event.details?.comments || '-',
+    },
+    {
+        title: 'Author',
+        value: '-',
+    },
+];

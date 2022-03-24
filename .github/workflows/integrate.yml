@@ -1,8 +1,6 @@
 name: 'integrate'
-on:
-    push:
-        branches-ignore:
-            - main
+on: pull_request
+
 
 jobs:
     test_pull_request:
@@ -10,10 +8,10 @@ jobs:
         steps:
             -   uses: actions/checkout@v2
             -   run: |
-                    npm install
+                    yarn --no-progress --non-interactive
             -   run: |
-                    npm run lint
+                    yarn run lint
             -   run: |
-                    npm test
+                    yarn run test
             -   run: |
-                    npm run build
+                    yarn run build

@@ -1,14 +1,7 @@
 import React, { memo } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
-import { Grid } from '@material-ui/core';
-import Button from '@material-ui/core/Button';
-import Checkbox from '@material-ui/core/Checkbox';
-import Divider from '@material-ui/core/Divider';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import Radio from '@material-ui/core/Radio';
-import RadioGroup from '@material-ui/core/RadioGroup';
-import makeStyles from '@material-ui/core/styles/makeStyles';
+import { Button, Checkbox, Divider, FormControlLabel, Grid, Radio, RadioGroup } from '@mui/material';
 import { RegistrationStatus } from '../../../graphql/types';
 import TextInput from '../../form/TextInput';
 
@@ -18,7 +11,6 @@ export enum AnimalIncomingType {
 }
 
 function RegistrationStep({ onPrev }: RegistrationStepProps) {
-    const classes = useStyles();
     const { control, register } = useFormContext();
 
     return (
@@ -30,7 +22,7 @@ function RegistrationStep({ onPrev }: RegistrationStepProps) {
                         control={control}
                         name="registration.incomingType"
                         render={props => (
-                            <RadioGroup value={props.value} onChange={(e, val) => props.onChange(val)}>
+                            <RadioGroup value={props.field.value} onChange={(e, val) => props.field.onChange(val)}>
                                 <FormControlLabel
                                     value={AnimalIncomingType.RESCUED}
                                     control={<Radio size="small" />}
@@ -45,7 +37,7 @@ function RegistrationStep({ onPrev }: RegistrationStepProps) {
                         )}
                     />
                 </Grid>
-                <Grid item xs={12} sm={6} className={classes.relative}>
+                <Grid item xs={12} sm={6}>
                     <TextInput
                         name="registration.nr"
                         label="Registration No."
@@ -73,7 +65,7 @@ function RegistrationStep({ onPrev }: RegistrationStepProps) {
                         control={control}
                         name="registration.status"
                         render={props => (
-                            <RadioGroup value={props.value} onChange={(e, val) => props.onChange(val)}>
+                            <RadioGroup value={props.field.value} onChange={(e, val) => props.field.onChange(val)}>
                                 <FormControlLabel
                                     value={RegistrationStatus.Active}
                                     control={<Radio size="small" />}
@@ -100,7 +92,7 @@ function RegistrationStep({ onPrev }: RegistrationStepProps) {
             <Grid item container>
                 <Divider style={{ width: '100%' }} />
             </Grid>
-            <Grid item xs={12} container spacing={2} justify="center">
+            <Grid item xs={12} container spacing={2} justifyContent="center">
                 <Grid item>
                     <Button color="secondary" variant="outlined" onClick={onPrev}>
                         Back
@@ -121,9 +113,3 @@ export default memo(RegistrationStep);
 interface RegistrationStepProps {
     onPrev: () => void;
 }
-
-const useStyles = makeStyles(() => ({
-    relative: {
-        position: 'relative',
-    },
-}));

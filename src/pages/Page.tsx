@@ -1,10 +1,7 @@
 import React, { ReactNode } from 'react';
 
-import Container from '@material-ui/core/Container';
-import Grid from '@material-ui/core/Grid';
-import { makeStyles } from '@material-ui/core/styles';
-import Typography from '@material-ui/core/Typography';
-import useMobile from '../hooks/useMobile';
+import { Container, Grid, styled, Typography } from '@mui/material';
+import useNavMobile from '../hooks/useNavMobile';
 
 interface PageProps {
     title?: string | ReactNode;
@@ -14,34 +11,67 @@ interface PageProps {
     displayTitleOnMobile?: boolean;
 }
 
+const PREFIX = 'Page';
+
+const classes = {
+    heading: `${PREFIX}-heading`,
+    endAlign: `${PREFIX}-endAlign`,
+    title: `${PREFIX}-title`,
+    content: `${PREFIX}-content`,
+};
+
+const Root = styled('main')(({ theme }) => ({
+    paddingTop: 0,
+    paddingBottom: 32,
+    [theme.breakpoints.up('sm')]: {
+        paddingTop: 64 + 32,
+    },
+
+    [`& .${classes.heading}`]: {
+        marginBottom: theme.spacing(2),
+    },
+    [`& .${classes.endAlign}`]: {
+        textAlign: 'end',
+    },
+    [`& .${classes.title}`]: {
+        fontWeight: 500,
+    },
+    [`& .${classes.content}`]: {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        flexDirection: 'column',
+    },
+}));
+
 export default function Page({ title, topSection, children, displayTitleOnMobile }: PageProps) {
-    const classes = useStyles();
-    const matchesMobile = useMobile();
+    const matchesNavMobile = useNavMobile();
 
     return (
-        <Container component="main" className={classes.root} maxWidth="lg">
-            <Grid container spacing={4}>
-                {(!matchesMobile || displayTitleOnMobile) && (
-                    <Grid item xs={12}>
-                        {title && <PageTitle title={title} />}
+        <Root>
+            <Container maxWidth="lg">
+                <Grid container columnSpacing={0} rowSpacing={2}>
+                    {(!matchesNavMobile || displayTitleOnMobile) && title && (
+                        <Grid item xs={12}>
+                            <PageTitle title={title} />
+                        </Grid>
+                    )}
+
+                    {topSection && (
+                        <Grid item xs={12}>
+                            {topSection}
+                        </Grid>
+                    )}
+                    <Grid item xs={12} className={classes.content}>
+                        {children}
                     </Grid>
-                )}
-                {topSection && (
-                    <Grid item xs={12}>
-                        {topSection}
-                    </Grid>
-                )}
-                <Grid item xs={12} className={classes.content}>
-                    {children}
                 </Grid>
-            </Grid>
-        </Container>
+            </Container>
+        </Root>
     );
 }
 
 function PageTitle({ title }: { title: string | ReactNode }) {
-    const classes = useStyles();
-
     if (typeof title !== 'string') {
         // Custom title
         return <>title</>;
@@ -49,36 +79,9 @@ function PageTitle({ title }: { title: string | ReactNode }) {
 
     return (
         <>
-            <Typography className={classes.title} variant="h3" component="h1">
+            <Typography className={classes.title} variant="h1">
                 {title}
             </Typography>
         </>
     );
 }
-
-const useStyles = makeStyles(theme => ({
-    root: {
-        [theme.breakpoints.down('md')]: {
-            marginTop: theme.spacing(1),
-        },
-        [theme.breakpoints.up('md')]: {
-            marginTop: 64 + theme.spacing(3), // follow fixed AppBar minHeight: 64
-        },
-        marginBottom: theme.spacing(10),
-    },
-    heading: {
-        marginBottom: theme.spacing(2),
-    },
-    endAlign: {
-        textAlign: 'end',
-    },
-    title: {
-        fontWeight: 500,
-    },
-    content: {
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'flex-start',
-        flexDirection: 'column',
-    },
-}));

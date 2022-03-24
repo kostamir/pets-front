@@ -1,38 +1,89 @@
 import { loader } from 'graphql.macro';
-import Image from 'material-ui-image';
-import React from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import Image from 'mui-image';
+import React, { useRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
-import { useQuery } from '@apollo/client';
-import { Box, Typography } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
-import { Skeleton } from '@material-ui/lab';
+import { useMutation, useQuery } from '@apollo/client';
+import AddAPhotoIcon from '@mui/icons-material/AddAPhoto';
+import { Box, IconButton, Skeleton, styled, Typography } from '@mui/material';
 import { Animal, Event } from '../../graphql/types';
-import { getAnimalAge, getAnimalWeight } from '../../utils/animal';
+import { getAnimalDetails } from '../../utils/animal';
+import SelectFilesDialog, { DialogEventTypes } from '../form/SelectFilesDialog';
 import LayoutMultiColRow from '../layout/LayoutMultiColRow';
 import AnimalDetailsHeader from './details/AnimalDetailsHeader';
+import AnimalDetailsMenu from './details/AnimalDetailsMenu';
 import AnimalEvents from './events/AnimalEvents';
+import ParamTable from './ParamTable';
 
 const GET_ANIMAL_DETAILS = loader('../../graphql/queries/animal-details.graphql');
-
-interface RouterParams {
-    id: string;
-}
+const UPDATE_ANIMAL_IMAGE = loader('../../graphql/queries/update-animal-image.graphql');
 
 interface Response {
     animal: Animal;
-    events: { animalAll: Event[] }[];
+    events: Event[];
 }
 
 interface AnimalDetailsProps {
     onLoad?: (animal: Animal) => void;
 }
 
-function AnimalDetails({ onLoad }: AnimalDetailsProps) {
-    const params: RouterParams = useParams();
-    const { id } = params;
-    const classes = useStyles();
-    const history = useHistory();
+const PREFIX = 'AnimalDetails';
+
+const classes = {
+    animalName: `${PREFIX}-animalName`,
+    animalMeta: `${PREFIX}-animalMeta`,
+    secondaryProperty: `${PREFIX}-secondaryProperty`,
+    eventsHeader: `${PREFIX}-eventsHeader`,
+    eventsContainer: `${PREFIX}-eventsContainer`,
+    imageContainer: `${PREFIX}-imageContainer`,
+    imageIcon: `${PREFIX}-imageIcon`,
+    addImageButton: `${PREFIX}-addImageButton`,
+};
+
+const Root = styled('div')(({ theme }) => ({
+    flexGrow: 1,
+    width: '100%',
+
+    [`& .${classes.animalName}`]: {
+        color: theme.palette.primary.dark,
+    },
+    [`& .${classes.animalMeta}`]: {
+        color: theme.palette.grey[600],
+    },
+    [`& .${classes.secondaryProperty}`]: {
+        marginBottom: theme.spacing(2),
+        fontWeight: 500,
+    },
+    [`& .${classes.eventsHeader}`]: {
+        fontWeight: 400,
+    },
+    [`& .${classes.eventsContainer}`]: {
+        backgroundColor: theme.palette.tertiary.main,
+    },
+    [`& .${classes.imageContainer}`]: {
+        position: 'relative',
+    },
+    [`& .${classes.addImageButton}`]: {
+        position: 'absolute',
+        top: theme.spacing(2),
+        right: theme.spacing(2),
+        zIndex: 1,
+        backgroundColor: 'rgba(255, 255, 255, 1)',
+        '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, .85)',
+        },
+        '&:focus': {
+            backgroundColor: 'rgba(255, 255, 255, .85)',
+        },
+    },
+}));
+
+export default function AnimalDetails({ onLoad }: AnimalDetailsProps) {
+    const { id } = useParams();
+    const navigate = useNavigate();
+
+    const [updateAnimalImageMutation] = useMutation(UPDATE_ANIMAL_IMAGE);
+    const uploadImageDialogRef = useRef<DialogEventTypes>(null);
 
     const { loading, error, data } = useQuery<Response>(GET_ANIMAL_DETAILS, {
         variables: { id: Number(id) },
@@ -40,7 +91,7 @@ function AnimalDetails({ onLoad }: AnimalDetailsProps) {
     });
 
     if (loading) {
-        return <Skeleton animation="wave" variant="rect" height="70vh" />;
+        return <Skeleton animation="wave" variant="rectangular" height="70vh" width="100%" />;
     }
 
     if (error) {
@@ -53,12 +104,33 @@ function AnimalDetails({ onLoad }: AnimalDetailsProps) {
         return <p>No data!</p>;
     }
 
-    const { animal, events } = data;
-    const birthDay = animal.details?.birthDate ? getAnimalAge(animal.details.birthDate) : '';
-    const animalEvents = events?.[0]?.animalAll ?? [];
+    const { animal, events = [] } = data;
+    const animalDetails = getAnimalDetails(animal);
+
+    const onSelectedFilesSubmit = async (images: File[]) => {
+        const dialogRef = uploadImageDialogRef?.current;
+        if (!dialogRef) {
+            return;
+        }
+        try {
+            dialogRef.setLoading(true);
+            await updateAnimalImageMutation({
+                variables: { id: Number(id), image: images[0] },
+            });
+            dialogRef.setVisible(false);
+        } catch (updateError: any) {
+            dialogRef.setError(updateError.message);
+        } finally {
+            dialogRef.setLoading(false);
+        }
+    };
+
+    const showUploadImageDialog = () => {
+        uploadImageDialogRef.current?.setVisible(true);
+    };
 
     return (
-        <div className={classes.root}>
+        <Root>
             <LayoutMultiColRow>
                 <>
                     <AnimalDetailsHeader
@@ -66,10 +138,22 @@ function AnimalDetails({ onLoad }: AnimalDetailsProps) {
                         gender={animal.details?.gender?.value}
                         species={animal.details?.species?.value}
                         color={animal.details?.color?.value}
-                        onBack={() => history.goBack()}
+                        onBack={() => navigate(-1)}
                         breed={animal.details?.breed?.value}
-                    />
-                    <Image src={animal.imageUrl!} aspectRatio={3 / 2} cover />
+                    >
+                        <AnimalDetailsMenu id={animal.id} />
+                    </AnimalDetailsHeader>
+                    <Box className={classes.imageContainer}>
+                        <Image src={animal.imageUrl!} aspectratio={3 / 2} cover="true" />
+                        <IconButton
+                            className={classes.addImageButton}
+                            color="primary"
+                            onClick={showUploadImageDialog}
+                            aria-label="add image"
+                        >
+                            <AddAPhotoIcon />
+                        </IconButton>
+                    </Box>
                     {animal.details && (
                         <>
                             <Box mt={3} mb={2}>
@@ -84,56 +168,30 @@ function AnimalDetails({ onLoad }: AnimalDetailsProps) {
                                     </Typography>
                                 )}
                             </Box>
-                            <Box
-                                display="flex"
-                                flexDirection="column"
-                                alignItems="flexStart"
-                                justifyContent="flexStart"
-                            >
-                                <Typography variant="body2">{`Age - ${birthDay}`}</Typography>
-                                {animal.details.weight && (
-                                    <Typography variant="body2">
-                                        {`Weight - ${getAnimalWeight(animal.details.weight)}`}
-                                    </Typography>
-                                )}
-                                <Typography variant="body2">{`Color - ${animal.details.color?.value}`}</Typography>
-                                <Typography variant="body2">{animal.comments}</Typography>
+                            <Box mt={3} mb={2}>
+                                <ParamTable details={animalDetails} />
                             </Box>
                         </>
+                    )}
+                    {animal.comments && (
+                        <Box mt={3} mb={2}>
+                            <Typography variant="body1" dangerouslySetInnerHTML={{ __html: animal.comments }} />
+                        </Box>
                     )}
                     <Box mt={1}>
                         <Typography variant="body1">Referencing Animal ID:{id}</Typography>
                     </Box>
                 </>
                 <Box className={classes.eventsContainer} py={3} px={2}>
-                    <AnimalEvents events={animalEvents} />
+                    <AnimalEvents events={events} />
                 </Box>
             </LayoutMultiColRow>
-        </div>
+            <SelectFilesDialog
+                ref={uploadImageDialogRef}
+                title="Animal picture"
+                accept="image/jpeg, image/jpg"
+                onSubmit={onSelectedFilesSubmit}
+            />
+        </Root>
     );
 }
-
-export default AnimalDetails;
-
-const useStyles = makeStyles(theme => ({
-    root: {
-        flexGrow: 1,
-        width: '100%',
-    },
-    animalName: {
-        color: theme.palette.primary.dark,
-    },
-    animalMeta: {
-        color: theme.palette.grey[600],
-    },
-    secondaryProperty: {
-        marginBottom: theme.spacing(2),
-        fontWeight: 500,
-    },
-    eventsHeader: {
-        fontWeight: 400,
-    },
-    eventsContainer: {
-        backgroundColor: theme.palette.tertiary.main,
-    },
-}));

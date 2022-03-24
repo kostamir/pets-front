@@ -1,42 +1,65 @@
-import { loader } from 'graphql.macro';
 import React from 'react';
 
-import { useQuery } from '@apollo/client';
-import Skeleton from '@material-ui/lab/Skeleton';
-import { Animal } from '../../graphql/types';
-import AnimalsList from './AnimalsList';
+import { Grid, Skeleton } from '@mui/material';
+import { useAppDispatch, useAppSelector } from '../../store';
+import { loadNextPage, loadPreviousPage, setPageSize } from '../../store/queryArgs';
+import AnimalCard from './AnimalCard';
 import AnimalsTable from './AnimalsTable';
+import PaginationRounded from './PaginationRounded';
 import { AnimalsViewType } from './ViewSelector';
 
-const GET_ANIMALS_QUERY = loader('../../graphql/queries/animal-list.graphql');
-
-interface Response {
-    animals: Animal[];
-}
-
-interface AnimalsListContainerProps {
-    viewType: AnimalsViewType;
-}
-
 export default function AnimalsListContainer({ viewType }: AnimalsListContainerProps) {
-    const { loading, error, data } = useQuery<Response>(GET_ANIMALS_QUERY);
-    if (loading) {
-        return <Skeleton animation="wave" variant="rect" height={500} />;
+    const dispatch = useAppDispatch();
+
+    const { loading, entities, pageInfo } = useAppSelector(state => state.animals);
+    const { currentPage, pageSize } = useAppSelector(state => state.queryArgs);
+
+    // const animalObjs: Animal[] = animalsConnection.edges;
+    const totalPageSize = pageInfo?.totalCount || 0;
+
+    if (loading === 'pending') {
+        return <Skeleton animation="wave" variant="rectangular" height={500} width="100%" />;
     }
 
-    if (error) {
-        // TODO: replace with proper UI elements
-        return <p>Error!</p>;
-    }
-
-    if (!data?.animals.length) {
+    if (totalPageSize === 0) {
         // TODO: replace with proper UI elements
         return <p>No data</p>;
     }
 
-    if (viewType === AnimalsViewType.TABLE) {
-        return <AnimalsTable animals={data.animals} />;
+    function handlePageSizeChange(size) {
+        dispatch(setPageSize(size));
     }
 
-    return <AnimalsList animals={data.animals} />;
+    function handlePageChange(newPage) {
+        if (newPage > currentPage) {
+            dispatch(loadNextPage(pageInfo));
+        } else {
+            dispatch(loadPreviousPage(pageInfo));
+        }
+    }
+
+    return (
+        <>
+            {viewType === AnimalsViewType.TABLE ? (
+                <AnimalsTable animals={entities} />
+            ) : (
+                <Grid container component="ul" spacing={2} justifyContent="center">
+                    {entities.map(animal => (
+                        <AnimalCard key={animal.id} animal={animal} />
+                    ))}
+                </Grid>
+            )}
+            <PaginationRounded
+                count={totalPageSize}
+                page={currentPage}
+                onPageChange={handlePageChange}
+                pageSize={pageSize}
+                onPageSizeChange={handlePageSizeChange}
+            />
+        </>
+    );
+}
+
+interface AnimalsListContainerProps {
+    viewType: AnimalsViewType;
 }

@@ -1,10 +1,17 @@
+import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
-import { FieldError, useFormContext } from 'react-hook-form';
+import { Controller, FieldError, useFormContext, useWatch } from 'react-hook-form';
 
-import { BaseTextFieldProps } from '@material-ui/core';
-import makeStyles from '@material-ui/core/styles/makeStyles';
-import TextField from '@material-ui/core/TextField';
-import Typography from '@material-ui/core/Typography';
+import { BaseTextFieldProps, styled, TextField, Typography } from '@mui/material';
+
+const StyledTypography = styled(Typography)(({ theme }) => ({
+    position: 'absolute',
+    right: 12,
+    bottom: 12,
+    '&.Mui-error': {
+        color: theme.palette.error.main,
+    },
+}));
 
 export default function TextInput({
     label,
@@ -13,69 +20,84 @@ export default function TextInput({
     placeholder,
     defaultValue,
     fullWidth = false,
+    helperText,
     rightHelperText,
     showLettersCount = false,
     maxLength = 25,
     required = false,
+    validate,
     type = 'text',
     InputLabelProps,
 }: TextInputProps) {
-    const classes = useStyles();
-    const { register, errors } = useFormContext();
-    const [value, setValue] = useState('');
+    const { control, formState } = useFormContext();
+
+    const [localValue, setLocalValue] = useState<string | undefined>(undefined);
     const [error, setError] = useState<FieldError | undefined>(undefined);
 
-    const handleChange = (val: string) => {
-        if (val.length <= maxLength) {
-            setValue(val.trim());
-        }
-    };
+    const formValue = useWatch({
+        control,
+        name,
+        defaultValue: undefined,
+    });
 
     useEffect(() => {
+        setLocalValue(formValue);
+    }, [formValue]);
+
+    useEffect(() => {
+        const { errors } = formState;
         if (!name.includes('.')) {
             setError(errors[name]);
             return;
         }
+
         const [obj, property] = name.split('.');
         setError(errors[obj] ? errors[obj][property] : undefined);
-    }, [errors, name]);
+    }, [formState, name]);
+
+    const handleChange = (e, callback) => {
+        const { value } = e.target;
+        setLocalValue(value);
+        callback(e);
+    };
 
     return (
         <>
-            <TextField
-                label={label}
-                id={id}
-                type={type}
-                color="secondary"
-                placeholder={placeholder}
-                variant="outlined"
-                fullWidth={fullWidth}
-                margin="dense"
+            <Controller
                 name={name}
-                error={!!error}
-                helperText={error?.message ?? required ? 'Required' : 'Optional'}
-                InputLabelProps={InputLabelProps}
-                value={value}
-                onChange={e => handleChange(e.target.value)}
+                control={control}
                 defaultValue={defaultValue}
-                inputRef={register({ required: required ? 'Required' : false })}
+                rules={{ required: required ? 'Required' : false, maxLength, validate }}
+                render={({ field: { onChange, value } }) => (
+                    <TextField
+                        label={label}
+                        id={id}
+                        type={type}
+                        color="primary"
+                        placeholder={placeholder}
+                        variant="outlined"
+                        fullWidth={fullWidth}
+                        margin="dense"
+                        name={name}
+                        error={!!error}
+                        helperText={error?.message || helperText}
+                        InputLabelProps={InputLabelProps}
+                        value={value}
+                        onChange={e => {
+                            handleChange(e, onChange);
+                        }}
+                        defaultValue={defaultValue}
+                    />
+                )}
             />
             {(showLettersCount || rightHelperText) && (
-                <Typography variant="caption" color="textSecondary" className={classes.rightHelper}>
-                    {rightHelperText ?? `${value.length}/${maxLength}`}
-                </Typography>
+                <StyledTypography variant="caption" color="textSecondary" className={clsx({ ['Mui-error']: error })}>
+                    {rightHelperText ?? `${localValue?.length || 0}/${maxLength}`}
+                </StyledTypography>
             )}
         </>
     );
 }
-
-const useStyles = makeStyles(() => ({
-    rightHelper: {
-        position: 'absolute',
-        right: 12,
-        bottom: 12,
-    },
-}));
 
 interface TextInputProps extends BaseTextFieldProps {
     name: string;
@@ -83,4 +105,5 @@ interface TextInputProps extends BaseTextFieldProps {
     maxLength?: number;
     rightHelperText?: string;
     required?: boolean;
+    validate?: (input: string) => string | boolean;
 }

@@ -1,111 +1,100 @@
-import { createMuiTheme } from '@material-ui/core/styles';
-import { ThemeOptions } from '@material-ui/core/styles/createMuiTheme';
+import { createTheme, ThemeOptions } from '@mui/material';
 
-const defaultTheme = createMuiTheme({
+const defaultTheme = createTheme({
     palette: {
         primary: {
-            light: '#e8cdb8',
-            main: '#875e3b',
-            dark: '#4e2c1a',
-        },
-        secondary: {
             light: '#417565',
             main: '#13493b',
             dark: '#002115',
+        },
+        secondary: {
+            light: '#e8cdb8',
+            main: '#875e3b',
+            dark: '#4e2c1a',
         },
         tertiary: {
             light: '#ffffff',
             main: '#faf5f1',
             dark: '#c7c2be',
         },
+        error: {
+            main: '#f44336',
+        },
     },
     breakpoints: {
-        // due to Material UI breakpoints implementation
-        // theme.breakpoints.down('sm') resolves to "+1 and lower" or "md and lower"
         values: {
             xs: 0,
-            sm: 500,
-            md: 768,
-            lg: 1280,
-            xl: 1920,
+            sm: 600,
+            md: 900,
+            lg: 1200,
+            xl: 1536,
+        },
+    },
+    typography: {
+        body1: {
+            lineHeight: 1.2,
         },
     },
 });
-const { breakpoints } = defaultTheme;
+
+// Responsive Typography
+defaultTheme.typography.h1 = {
+    fontSize: '2.25rem',
+    [defaultTheme.breakpoints.down('sm')]: {
+        fontSize: '1.75rem',
+    },
+};
+
+defaultTheme.typography.h2 = {
+    fontSize: '1.75rem',
+    [defaultTheme.breakpoints.down('sm')]: {
+        fontSize: '1.5rem',
+    },
+};
+defaultTheme.typography.h3 = {
+    fontSize: '1.5rem',
+    [defaultTheme.breakpoints.down('sm')]: {
+        fontSize: '1.25rem',
+    },
+};
+defaultTheme.typography.h4 = {
+    fontSize: '1.25rem',
+    [defaultTheme.breakpoints.down('sm')]: {
+        fontSize: '1.15rem',
+    },
+};
+defaultTheme.typography.h5 = {
+    fontSize: '1.25rem',
+    [defaultTheme.breakpoints.down('sm')]: {
+        fontSize: '1.15rem',
+    },
+};
+defaultTheme.typography.h6 = {
+    fontSize: '1.2rem',
+};
 
 const theme: ThemeOptions = {
     ...defaultTheme,
-    overrides: {
-        MuiTypography: {
-            h1: {
-                fontSize: '3rem',
-                lineHeight: 1.2,
-                [breakpoints.down('sm')]: {
-                    fontSize: '2.6rem',
-                },
-            },
-            h2: {
-                fontSize: '2.6rem',
-                lineHeight: 1.2,
-                [breakpoints.down('sm')]: {
-                    fontSize: '2.2rem',
-                },
-            },
-            h3: {
-                fontSize: '2.2rem',
-                lineHeight: 1.2,
-                [breakpoints.down('sm')]: {
-                    fontSize: '1.8rem',
-                },
-            },
-            h4: {
-                fontSize: '1.8rem',
-                lineHeight: 1.2,
-                [breakpoints.down('sm')]: {
-                    fontSize: '1.6rem',
-                },
-            },
-            h5: {
-                fontSize: '1.8rem',
-                lineHeight: 1.2,
-                [breakpoints.down('sm')]: {
-                    fontSize: '1.4rem',
-                },
-            },
-            h6: {
-                fontSize: '1.6rem',
-                lineHeight: 1.2,
-                [breakpoints.down('sm')]: {
-                    fontSize: '1.4rem',
-                },
+
+    components: {
+        MuiLink: {
+            defaultProps: {
+                underline: 'hover',
             },
         },
         MuiListItemIcon: {
-            root: {
-                minWidth: 'auto',
-                marginTop: 4,
-                marginBottom: 4,
-            },
-        },
-        MuiStepIcon: {
-            root: {
-                '&$completed': {
-                    fill: defaultTheme.palette.success.main,
-                },
-                '&$active': {
-                    fill: defaultTheme.palette.secondary.main,
+            styleOverrides: {
+                root: {
+                    minWidth: 'auto',
+                    marginTop: 4,
+                    marginBottom: 4,
                 },
             },
-        },
-    },
-    props: {
-        MuiUseMediaQuery: {
-            noSsr: true,
         },
     },
 };
 
-declare module '@material-ui/core/styles/createPalette' {
+declare module '@mui/material/styles' {
     interface Palette {
         tertiary: Palette['primary'];
     }
